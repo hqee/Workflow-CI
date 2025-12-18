@@ -34,8 +34,14 @@ jobs:
 
       - name: Build Docker Image from Last Run
         run: |
-          RUN_ID=$(mlflow search-runs --experiment-name 'Diabetes_Classification_Advanced' --max-results 1 --output csv | tail -n 1 | cut -d, -f1)
+          # Menggunakan script python pendek untuk mengambil RUN_ID terbaru secara akurat
+          RUN_ID=$(python -c "import mlflow; exp = mlflow.get_experiment_by_name('Diabetes_Classification_Advanced'); runs = mlflow.search_runs(experiment_ids=[exp.experiment_id], max_results=1, order_by=['attributes.start_time DESC']); print(runs.iloc[0]['run_id'])")
+          echo "Building Docker for RUN_ID: $RUN_ID"
           mlflow models build-docker -m "runs:/$RUN_ID/model" -n "${{ secrets.DOCKERHUB_USERNAME }}/diabetes-app:latest" --enable-mlserver
+        env:
+          MLFLOW_TRACKING_URI: https://dagshub.com/hqee/eksperimen_sml_haqi-dhiya.mlflow
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
 
       - name: Push to Docker Hub
         run: |
