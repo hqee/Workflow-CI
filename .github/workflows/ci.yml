@@ -34,14 +34,17 @@ jobs:
 
       - name: Build Docker Image from Last Run
         run: |
-          # Menggunakan script python pendek untuk mengambil RUN_ID terbaru secara akurat
-          RUN_ID=$(python -c "import mlflow; exp = mlflow.get_experiment_by_name('Diabetes_Classification_Advanced'); runs = mlflow.search_runs(experiment_ids=[exp.experiment_id], max_results=1, order_by=['attributes.start_time DESC']); print(runs.iloc[0]['run_id'])")
-          echo "Building Docker for RUN_ID: $RUN_ID"
+          export MLFLOW_TRACKING_URI=https://dagshub.com/hqee/eksperimen_sml_haqi-dhiya.mlflow
+          export MLFLOW_TRACKING_USERNAME=hqee
+          export MLFLOW_TRACKING_PASSWORD=${{ secrets.DAGSHUB_TOKEN }}
+
+          # Ambil RUN_ID
+          RUN_ID=$(python -c "import mlflow; import os; mlflow.set_tracking_uri(os.getenv('MLFLOW_TRACKING_URI')); exp = mlflow.get_experiment_by_name('Diabetes_Classification_Advanced'); runs = mlflow.search_runs(experiment_ids=[exp.experiment_id], max_results=1, order_by=['attributes.start_time DESC']); print(runs.iloc[0]['run_id'])")
+
+          echo "Berhasil mendapatkan RUN_ID: $RUN_ID"
+
+          # Build Docker
           mlflow models build-docker -m "runs:/$RUN_ID/model" -n "${{ secrets.DOCKERHUB_USERNAME }}/diabetes-app:latest" --enable-mlserver
-        env:
-          MLFLOW_TRACKING_URI: https://dagshub.com/hqee/eksperimen_sml_haqi-dhiya.mlflow
-          MLFLOW_TRACKING_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
 
       - name: Push to Docker Hub
         run: |
