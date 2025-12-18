@@ -8,21 +8,24 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 import mlflow
 import mlflow.sklearn
 import dagshub
+import os
 
 dagshub.init(repo_owner='hqee', repo_name='eksperimen_sml_haqi-dhiya', mlflow=True)
 
-# Load Data Preprocessed
-df = pd.read_csv('diabetes_preprocessed.csv')
+data_path = 'diabetes_preprocessed.csv'
+
+if not os.path.exists(data_path):
+    raise FileNotFoundError(f"File {data_path} tidak ditemukan! Pastikan dataset ada di folder MLProject.")
+
+df = pd.read_csv(data_path)
 X = df.drop(columns=['Outcome'])
 y = df['Outcome']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-# Setup MLflow Experiment
 mlflow.set_experiment("Diabetes_Classification_Advanced")
 
-with mlflow.start_run(run_name="RandomForest_Tuning"):
-    # Hyperparameter Tuning
+with mlflow.start_run(run_name="RandomForest_Tuning_CI"):
     rf = RandomForestClassifier(random_state=42)
     param_grid = {
         'n_estimators': [50, 100],
@@ -35,29 +38,27 @@ with mlflow.start_run(run_name="RandomForest_Tuning"):
     
     best_model = grid_search.best_estimator_
     
-    # Log Best Params
+    # Manual Logging (Syarat Skilled/Advanced)
     mlflow.log_params(grid_search.best_params_)
     
-    # Log Metrics
     y_pred = best_model.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
     mlflow.log_metric("accuracy", acc)
     
-    # Artefak 1: Confusion Matrix Image
+    # Confusion Matrix
     plt.figure(figsize=(8, 6))
     sns.heatmap(confusion_matrix(y_test, y_pred), annot=True, fmt='d', cmap='Blues')
     plt.title('Confusion Matrix')
     plt.savefig("confusion_matrix.png")
     mlflow.log_artifact("confusion_matrix.png")
     
-    # Artefak 2: Classification Report Text
+    # Classification Report
     report = classification_report(y_test, y_pred)
     with open("classification_report.txt", "w") as f:
         f.write(report)
     mlflow.log_artifact("classification_report.txt")
     
     # Log Model
-    mlflow.sklearn.log_model(best_model, "diabetes_model_final")
+    mlflow.sklearn.log_model(best_model, "model")
     
     print(f"Eksperimen selesai. Akurasi: {acc}")
-    print("Metadata telah dikirim ke DagsHub!")
