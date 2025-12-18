@@ -12,7 +12,7 @@ import os
 
 dagshub.init(repo_owner='hqee', repo_name='eksperimen_sml_haqi-dhiya', mlflow=True)
 
-data_path = 'diabetes_preprocessed.csv'
+data_path = 'MLProject/diabetes_preprocessed.csv'
 
 if not os.path.exists(data_path):
     raise FileNotFoundError(f"File {data_path} tidak ditemukan! Pastikan dataset ada di folder MLProject.")
