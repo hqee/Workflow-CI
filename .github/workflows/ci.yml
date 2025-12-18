@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: "3.12.7"
 
-      - name: Install MLflow and Dependencies
+      - name: Install Dependencies
         run: |
           pip install mlflow==2.19.0 scikit-learn pandas dagshub matplotlib seaborn
 
@@ -26,12 +26,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker Image
+      - name: Run Training to Generate Model
         run: |
-          # Membangun docker dari folder MLProject
-          mlflow models build-docker -m "MLProject" -n "${{ secrets.DOCKERHUB_USERNAME }}/diabetes-app:latest" --enable-mlserver
+          # Menjalankan training agar folder 'mlruns' tercipta
+          python MLProject/modelling.py
         env:
           DAGSHUB_USER_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+
+      - name: Build Docker Image from Last Run
+        run: |
+          mlflow models build-docker -m "runs:/$(mlflow search-runs --experiment-name 'Diabetes_Classification_Advanced' --max-results 1 --output csv | tail -n 1 | cut -d, -f1)/model" -n "${{ secrets.DOCKERHUB_USERNAME }}/diabetes-app:latest" --enable-mlserver
 
       - name: Push to Docker Hub
         run: |
