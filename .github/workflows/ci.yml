@@ -28,7 +28,7 @@ jobs:
 
       - name: Run Training to Generate Model
         run: |
-          mlflow run MLProject/ -e main --no-conda
+          mlflow run MLProject/ -e main --env-manager local
         env:
           MLFLOW_TRACKING_URI: https://dagshub.com/hqee/eksperimen_sml_haqi-dhiya.mlflow
           MLFLOW_TRACKING_USERNAME: hqee
